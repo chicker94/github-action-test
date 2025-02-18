@@ -13,16 +13,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set environment variables
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "ENV=prod" >> $GITHUB_ENV
-            echo "IMAGE_TAG=latest" >> $GITHUB_ENV
-          else
-            echo "ENV=dev" >> $GITHUB_ENV
-            echo "IMAGE_TAG=dev-${{ github.sha }}" >> $GITHUB_ENV
-          fi
-
+	    - name: Get short SHA
+	      id: sha
+	      run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+	
+	    - name: Set environment variables
+	      run: |
+	        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+	          echo "ENV=prod" >> $GITHUB_ENV
+	          echo "IMAGE_TAG=latest" >> $GITHUB_ENV
+	        else
+	          echo "ENV=dev" >> $GITHUB_ENV
+	          echo "IMAGE_TAG=dev-${{ env.SHORT_SHA }}" >> $GITHUB_ENV
+	        fi
+	
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -42,4 +46,3 @@ jobs:
         run: |
           docker build -t chicker94/rancher-ci-test:${{ env.IMAGE_TAG }} .
           docker push chicker94/rancher-ci-test:${{ env.IMAGE_TAG }}
-
