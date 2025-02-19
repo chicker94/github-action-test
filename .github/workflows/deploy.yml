@@ -9,6 +9,9 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.set_env.outputs.image_tag }}
+      deploy_path: ${{ steps.set_env.outputs.deploy_path }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,15 +21,16 @@ jobs:
         run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Set environment variables
+        id: set_env
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "ENV=prod" >> $GITHUB_ENV
-            echo "IMAGE_TAG=latest" >> $GITHUB_ENV
-            echo "DEPLOY_PATH=prod" >> $GITHUB_ENV
+            echo "image_tag=latest" >> $GITHUB_OUTPUT
+            echo "deploy_path=prod" >> $GITHUB_OUTPUT
           else
             echo "ENV=dev" >> $GITHUB_ENV
-            echo "IMAGE_TAG=dev-${{ env.SHORT_SHA }}" >> $GITHUB_ENV
-            echo "DEPLOY_PATH=dev" >> $GITHUB_ENV
+            echo "image_tag=dev-${{ env.SHORT_SHA }}" >> $GITHUB_OUTPUT
+            echo "deploy_path=dev" >> $GITHUB_OUTPUT
           fi
 
       - name: Set up Go
@@ -46,8 +50,8 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t chicker94/rancher-ci-test:${{ env.IMAGE_TAG }} .
-          docker push chicker94/rancher-ci-test:${{ env.IMAGE_TAG }}
+          docker build -t chicker94/rancher-ci-test:${{ steps.set_env.outputs.image_tag }} .
+          docker push chicker94/rancher-ci-test:${{ steps.set_env.outputs.image_tag }}
 
   update-manifest:
     needs: build-and-push
@@ -62,18 +66,14 @@ jobs:
           path: cd-repo
 
       - name: Update Kubernetes manifest
-        env:
-          DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
         run: |
-          sed -i "s|image: chicker94/rancher-ci-test:.*|image: chicker94/rancher-ci-test:${{ env.IMAGE_TAG }}|" cd-repo/$DEPLOY_PATH/deployment.yaml
-
+          sed -i "s|image: chicker94/rancher-ci-test:.*|image: chicker94/rancher-ci-test:${{ needs.build-and-push.outputs.image_tag }}|" cd-repo/${{ needs.build-and-push.outputs.deploy_path }}/deployment.yaml
 
       - name: Commit and push changes
         run: |
           cd cd-repo
           git config --global user.name 'GitHub Actions'
           git config --global user.email 'github-actions@github.com'
-          git add ${{ env.DEPLOY_PATH }}/deployment.yaml
-          git commit -m "Update image tag to ${{ env.IMAGE_TAG }}"
+          git add ${{ needs.build-and-push.outputs.deploy_path }}/deployment.yaml
+          git commit -m "Update image tag to ${{ needs.build-and-push.outputs.image_tag }}"
           git push
-
