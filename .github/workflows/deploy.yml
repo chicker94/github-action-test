@@ -62,8 +62,11 @@ jobs:
           path: cd-repo
 
       - name: Update Kubernetes manifest
+        env:
+          DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
         run: |
-          sed -i "s|image: chicker94/rancher-ci-test:.*|image: chicker94/rancher-ci-test:${{ env.IMAGE_TAG }}|" cd-repo/${{ env.DEPLOY_PATH }}/deployment.yaml
+          sed -i "s|image: chicker94/rancher-ci-test:.*|image: chicker94/rancher-ci-test:${{ env.IMAGE_TAG }}|" cd-repo/$DEPLOY_PATH/deployment.yaml
+
 
       - name: Commit and push changes
         run: |
