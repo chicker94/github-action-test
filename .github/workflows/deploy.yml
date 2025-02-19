@@ -1,4 +1,4 @@
-name: Build and Push Go App
+name: Build and Deploy Go App
 
 on:
   push:
@@ -22,9 +22,11 @@ jobs:
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "ENV=prod" >> $GITHUB_ENV
             echo "IMAGE_TAG=latest" >> $GITHUB_ENV
+            echo "DEPLOY_PATH=prod" >> $GITHUB_ENV
           else
             echo "ENV=dev" >> $GITHUB_ENV
             echo "IMAGE_TAG=dev-${{ env.SHORT_SHA }}" >> $GITHUB_ENV
+            echo "DEPLOY_PATH=dev" >> $GITHUB_ENV
           fi
 
       - name: Set up Go
@@ -47,3 +49,27 @@ jobs:
           docker build -t chicker94/rancher-ci-test:${{ env.IMAGE_TAG }} .
           docker push chicker94/rancher-ci-test:${{ env.IMAGE_TAG }}
 
+  update-manifest:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout CD repository
+        uses: actions/checkout@v4
+        with:
+          repository: chicker94/fleet-cd-deployments
+          ref: main
+          ssh-key: ${{ secrets.CD_REPO_SSH_KEY }}
+          path: cd-repo
+
+      - name: Update Kubernetes manifest
+        run: |
+          sed -i "s|image: chicker94/rancher-ci-test:.*|image: chicker94/rancher-ci-test:${{ env.IMAGE_TAG }}|" cd-repo/${{ env.DEPLOY_PATH }}/deployment.yaml
+
+      - name: Commit and push changes
+        run: |
+          cd cd-repo
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'github-actions@github.com'
+          git add ${{ env.DEPLOY_PATH }}/deployment.yaml
+          git commit -m "Update image tag to ${{ env.IMAGE_TAG }}"
+          git push
