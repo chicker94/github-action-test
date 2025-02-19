@@ -25,7 +25,7 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "ENV=prod" >> $GITHUB_ENV
-            echo "image_tag=latest" >> $GITHUB_OUTPUT
+            echo "image_tag=${{ env.SHORT_SHA }}" >> $GITHUB_OUTPUT
             echo "deploy_path=prod" >> $GITHUB_OUTPUT
           else
             echo "ENV=dev" >> $GITHUB_ENV
@@ -76,4 +76,7 @@ jobs:
           git config --global user.email 'github-actions@github.com'
           git add ${{ needs.build-and-push.outputs.deploy_path }}/deployment.yaml
           git commit -m "Update image tag to ${{ needs.build-and-push.outputs.image_tag }}"
-          git push
+          git push\
+
+
+          
