@@ -63,11 +63,10 @@ jobs:
           repository: chicker94/fleet-cd-deployments
           ref: main
           ssh-key: ${{ secrets.CD_REPO_SSH_KEY }}
-          path: cd-repo
 
       - name: Update Kubernetes manifest
         run: |
-          sed -i "s|image: chicker94/rancher-ci-test:.*|image: chicker94/rancher-ci-test:${{ needs.build-and-push.outputs.image_tag }}|" cd-repo/${{ needs.build-and-push.outputs.deploy_path }}/deployment.yaml
+          sed -i "s|image: chicker94/rancher-ci-test:.*|image: chicker94/rancher-ci-test:${{ needs.build-and-push.outputs.image_tag }}|" ${{ needs.build-and-push.outputs.deploy_path }}/deployment.yaml
 
       - name: Commit and push changes
         run: |
