@@ -67,14 +67,14 @@ jobs:
 
       - name: Update Kubernetes manifest
         run: |
-          sed -i "s|image: chicker94/rancher-ci-test:.*|image: chicker94/rancher-ci-test:${{ needs.build-and-push.outputs.image_tag }}|" cd-repo/${{ needs.build-and-push.outputs.deploy_path }}/deployment.yaml
+          sed -i "s|image: chicker94/rancher-ci-test:.*|image: chicker94/rancher-ci-test:${{ needs.build-and-push.outputs.image_tag }}|" cd-repo/prod/deployment.yaml
 
       - name: Commit and push changes
         run: |
           cd cd-repo
           git config --global user.name 'GitHub Actions'
           git config --global user.email 'github-actions@github.com'
-          git add ${{ needs.build-and-push.outputs.deploy_path }}/deployment.yaml
+          git add prod/deployment.yaml
           git commit -m "Update image tag to ${{ needs.build-and-push.outputs.image_tag }}"
           git push\
 
