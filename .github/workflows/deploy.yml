@@ -61,35 +61,22 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: chicker94/fleet-cd-deployments
+          ref: develop
           ssh-key: ${{ secrets.CD_REPO_SSH_KEY }}
           path: cd-repo
-          
-      - name: Determine branch and deployment path
-        id: set-vars
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "BRANCH=main" >> $GITHUB_ENV
-            echo "DEPLOY_PATH=prod/deployment.yaml" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-            echo "BRANCH=develop" >> $GITHUB_ENV
-            echo "DEPLOY_PATH=dev/deployment.yaml" >> $GITHUB_ENV
-          fi
-
-      - name: Pull latest changes from the correct branch
-        run: |
-          cd cd-repo
-          git checkout ${BRANCH}
-          git pull origin ${BRANCH}
 
       - name: Update Kubernetes manifest
         run: |
-          sed -i "s|image: chicker94/rancher-ci-test:.*|image: chicker94/rancher-ci-test:${{ needs.build-and-push.outputs.image_tag }}|" cd-repo/${DEPLOY_PATH}
+          sed -i "s|image: chicker94/rancher-ci-test:.*|image: chicker94/rancher-ci-test:${{ needs.build-and-push.outputs.image_tag }}|" cd-repo/dev/deployment.yaml
 
       - name: Commit and push changes
         run: |
           cd cd-repo
           git config --global user.name 'GitHub Actions'
           git config --global user.email 'github-actions@github.com'
-          git add ${DEPLOY_PATH}
+          git add dev/deployment.yaml
           git commit -m "Update image tag to ${{ needs.build-and-push.outputs.image_tag }}"
-          git push origin ${BRANCH}
+          git push\
+
+
+          
