@@ -1,14 +1,12 @@
-# Multi-stage build
+# 1. Tomcat 기반의 컨테이너 생성
+FROM tomcat:9.0
 
-# Step 1: Build the Go binary
-FROM golang:1.21 AS builder
-WORKDIR /app
-COPY main.go .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app main.go
+# 2. WAR 파일을 Tomcat의 webapps 디렉터리에 복사
+COPY build/libs/java-ci-test.war /usr/local/tomcat/webapps/ROOT.war
 
-# Step 2: Create minimal container
-FROM alpine:latest
-WORKDIR /root/
-COPY --from=builder /app/app .
+# 3. Tomcat 포트 개방
 EXPOSE 8080
-CMD ["./app"]
+
+# 4. Tomcat 실행
+CMD ["catalina.sh", "run"]
+
