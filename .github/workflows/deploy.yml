@@ -27,15 +27,15 @@ jobs:
 
       - name: Login to Docker Hub
         env:
-          DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
+          DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: echo "DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
 
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/java-nginx-app .
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/java-nginx-app .
 
       - name: Push Docker image to Docker Hub
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/java-nginx-app
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/java-nginx-app
 
   deploy:
     runs-on: ubuntu-latest
@@ -44,6 +44,6 @@ jobs:
     steps:
       - name: Pull and run Docker container
         run: |
-          docker pull ${{ secrets.DOCKER_USERNAME }}/java-nginx-app
-          docker run -d -p 80:8080 --name java-nginx-app ${{ secrets.DOCKER_USERNAME }}/java-nginx-app
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/java-nginx-app
+          docker run -d -p 80:8080 --name java-nginx-app ${{ secrets.DOCKERHUB_USERNAME }}/java-nginx-app
 
