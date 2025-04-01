@@ -3,7 +3,7 @@ name: Java CI/CD with Docker & Nginx
 on:
   push:
     branches:
-      - main
+      - develop
 
 jobs:
   build:
