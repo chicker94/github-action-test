@@ -1,12 +1,16 @@
-# 1. Tomcat 기반의 컨테이너 생성
-FROM tomcat:9.0
+FROM tomcat:9-jre11-openjdk-slim AS build
 
-# 2. WAR 파일을 Tomcat의 webapps 디렉터리에 복사
-COPY build/libs/java-ci-test.war /usr/local/tomcat/webapps/ROOT.war
+COPY target/*.war /usr/local/tomcat/webapps/ROOT.war
 
-# 3. Tomcat 포트 개방
-EXPOSE 8080
+RUN catalina.sh start && \
+    while [ ! -d /usr/local/tomcat/webapps/ROOT ]; do sleep 1; done && \
+    catalina.sh stop
 
-# 4. Tomcat 실행
-CMD ["catalina.sh", "run"]
+FROM nginx:stable-alpine
+
+COPY --from=build /usr/local/tomcat/webapps/ROOT /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
 
